@@ -12,9 +12,9 @@ if [ "$(docker ps -aq -f name=monitoring_allinone)" ]; then
     docker rm monitoring_allinone
 fi
 
-# Ensure Certbot directories exist on host
-mkdir -p certbot/conf
-mkdir -p certbot/www
+# Ensure Certbot directories exist on host and generate self-signed cert
+mkdir -p certbot/conf/live/suricata.dhimaslanangnugroho.my.id
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout certbot/conf/live/suricata.dhimaslanangnugroho.my.id/privkey.pem -out certbot/conf/live/suricata.dhimaslanangnugroho.my.id/fullchain.pem -subj "/CN=suricata.dhimaslanangnugroho.my.id"
 
 echo "[+] Building all-in-one monitoring image..."
 docker build -t monitoring_app -f Dockerfile .
@@ -22,7 +22,7 @@ docker build -t monitoring_app -f Dockerfile .
 echo "[+] Running container with host networking..."
 docker run -d \
   --name monitoring_allinone \
-  --network="host" \
+  --network=\"host\" \
   --privileged \
   -v "$(pwd)/docker/php:/var/www/html" \
   -v "$(pwd)/docker/nginx/default.conf:/etc/nginx/conf.d/default.conf" \
@@ -37,14 +37,10 @@ docker run -d \
 echo "[+] Waiting for Nginx to start..."
 sleep 10
 
-# Run Certbot to obtain SSL certificate
-echo "[+] Running Certbot to obtain SSL certificate..."
-docker exec monitoring_allinone certbot --nginx -d ${DOMAIN} --email ${CERTBOT_EMAIL} --rsa-key-size 4096 --agree-tos --noninteractive --force-renewal
-
-# Reload Nginx to apply SSL certificate
+# Reload Nginx to apply SSL certificate (if needed, though self-signed is ready)
 echo "[+] Reloading Nginx to apply SSL certificate..."
 docker exec monitoring_allinone nginx -s reload
 
 echo "[+] Done!"
-echo "Access Nginx/PHP at: http://${DOMAIN}:80 (will redirect to HTTPS)"
-echo "Access Streamlit at: https://${DOMAIN}"
+echo "Access Nginx/PHP at: http://localhost:80 (will redirect to HTTPS)"
+echo "Access Streamlit at: https://localhost:443 (accept self-signed certificate warning)"
