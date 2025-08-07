@@ -35,7 +35,7 @@ sleep 10
 
 # Run Certbot to obtain SSL certificate
 echo "[+] Running Certbot to obtain SSL certificate..."
-docker exec monitoring_allinone certbot certonly --webroot -w /var/www/certbot -d ${DOMAIN} --email ${CERTBOT_EMAIL} --rsa-key-size 4096 --agree-tos --noninteractive --force-renewal
+docker exec monitoring_allinone certbot --nginx -d ${DOMAIN} --email ${CERTBOT_EMAIL} --rsa-key-size 4096 --agree-tos --noninteractive --force-renewal
 
 # Reload Nginx to apply SSL certificate
 echo "[+] Reloading Nginx to apply SSL certificate..."
