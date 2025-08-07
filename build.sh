@@ -12,18 +12,20 @@ ENABLE_CERTBOT=${ENABLE_CERTBOT:-false}
 
 CONTAINER_NAME="monitoring_allinone"
 
-# --- Step 1: Stop and remove old container if exists ---
+# --- Step 1: Ensure Certbot directories exist on host 
+# (Moved this section up to ensure directories exist before potential container removal)
+mkdir -p certbot/conf/live/${DOMAIN}
+mkdir -p certbot/conf/accounts
+mkdir -p certbot/www
+
+# --- Step 2: Stop and remove old container if exists ---
 if [ "$(docker ps -aq -f name=${CONTAINER_NAME})" ]; then
     echo "[+] Stopping and removing existing container..."
     docker stop ${CONTAINER_NAME}
     docker rm ${CONTAINER_NAME}
 fi
 
-# --- Step 2: Prepare Certbot directories and SSL certificates ---
-mkdir -p certbot/conf/live/${DOMAIN}
-mkdir -p certbot/conf/accounts
-mkdir -p certbot/www
-
+# --- Step 3: Prepare SSL certificates (Certbot or self-signed) ---
 SSL_CERT_PATH="certbot/conf/live/${DOMAIN}/fullchain.pem"
 SSL_KEY_PATH="certbot/conf/live/${DOMAIN}/privkey.pem"
 
@@ -61,13 +63,13 @@ else
     USE_HTTPS_DOMAIN=false
 fi
 
-# --- Step 3: Build Docker image ---
+# --- Step 4: Build Docker image ---
 echo "[+] Building all-in-one monitoring image..."
 docker build -t monitoring_app -f Dockerfile .
 
-# --- Step 4: Run main container with network mode fallback ---
+# --- Step 5: Run main container with network mode fallback ---
 NETWORK_MODE="host"
-RUN_COMMAND="docker run -d --name ${CONTAINER_NAME} --network=\"host\" --privileged -v \"$(pwd)/docker/php:/var/www/html\" -v \"$(pwd)/docker/nginx/default.conf:/etc/nginx/conf.d/default.conf\" -v \"$(pwd)/docker/streamlit:/opt/app\" -v \"$(pwd)/db:/db\" -v \"$(pwd)/suricata_logs:/var/log/suricata\" -v \"$(pwd)/certbot/conf:/etc/letsencrypt\" -v \"$(pwd)/certbot/www:/var/www/certbot\" monitoring_app"
+RUN_COMMAND="docker run -d --name ${CONTAINER_NAME} --network=\"${NETWORK_MODE}\" --privileged -v \"$(pwd)/docker/php:/var/www/html\" -v \"$(pwd)/docker/nginx/default.conf:/etc/nginx/conf.d/default.conf\" -v \"$(pwd)/docker/streamlit:/opt/app\" -v \"$(pwd)/db:/db\" -v \"$(pwd)/suricata_logs:/var/log/suricata\" -v \"$(pwd)/certbot/conf:/etc/letsencrypt\" -v \"$(pwd)/certbot/www:/var/www/certbot\" monitoring_app"
 
 echo "[+] Attempting to run container with ${NETWORK_MODE} networking..."
 if ! eval ${RUN_COMMAND}; then
@@ -77,14 +79,14 @@ if ! eval ${RUN_COMMAND}; then
     eval ${RUN_COMMAND}
 fi
 
-# --- Step 5: Wait for Nginx and reload ---
+# --- Step 6: Wait for Nginx and reload ---
 echo "[+] Waiting for Nginx to start..."
 sleep 10
 
 echo "[+] Reloading Nginx to apply SSL certificate..."
 docker exec ${CONTAINER_NAME} nginx -s reload
 
-# --- Step 6: Final access instructions ---
+# --- Step 7: Final access instructions ---
 echo "[+] Done!"
 if [ "$NETWORK_MODE" = "host" ]; then
     if [ "$USE_HTTPS_DOMAIN" = "true" ]; then
