@@ -14,6 +14,7 @@ fi
 
 # Ensure Certbot directories exist on host and generate self-signed cert
 mkdir -p certbot/conf/live/suricata.dhimaslanangnugroho.my.id
+mkdir -p certbot/conf/accounts
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout certbot/conf/live/suricata.dhimaslanangnugroho.my.id/privkey.pem -out certbot/conf/live/suricata.dhimaslanangnugroho.my.id/fullchain.pem -subj "/CN=suricata.dhimaslanangnugroho.my.id"
 
 echo "[+] Building all-in-one monitoring image..."
