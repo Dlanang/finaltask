@@ -12,6 +12,10 @@ if [ "$(docker ps -aq -f name=monitoring_allinone)" ]; then
     docker rm monitoring_allinone
 fi
 
+# Ensure Certbot directories exist on host
+mkdir -p certbot/conf
+mkdir -p certbot/www
+
 echo "[+] Building all-in-one monitoring image..."
 docker build -t monitoring_app -f Dockerfile .
 
