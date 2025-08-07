@@ -1,28 +1,27 @@
-Berikut isi `README.md` untuk project **All-in-One Monitoring Container** berbasis Docker:
+# 📦 All-in-One Monitoring App (Nginx + PHP + SQLite + Streamlit + Suricata)
+
+Proyek ini adalah solusi *all-in-one* yang ringan dan portabel untuk menyajikan:
+
+- ✅ Landing page & sistem login berbasis PHP + SQLite
+- ✅ Dasbor Streamlit untuk visualisasi pemantauan jaringan *real-time* (didukung oleh Suricata)
+- ✅ Disajikan melalui satu kontainer Docker
+- ✅ Dukungan HTTPS dengan sertifikat *self-signed* (lokal) atau Let's Encrypt (produksi)
 
 ---
 
-````markdown
-# 📦 All-in-One Monitoring App (Nginx + PHP + SQLite + Streamlit)
+## 🛠 Tumpukan Teknologi
 
-Project ini adalah solusi all-in-one yang ringan dan portable untuk menyajikan:
-
-- ✅ Landing page & login system berbasis PHP + SQLite
-- ✅ Streamlit dashboard untuk visualisasi monitoring/anomali
-- ✅ Disajikan melalui satu container Docker
-
----
-
-## 🛠 Tech Stack
-
-| Komponen  | Fungsi                      |
-|-----------|-----------------------------|
-| Ubuntu    | Base image (22.04)          |
-| Nginx     | Web server                  |
-| PHP-FPM   | PHP interpreter             |
-| SQLite3   | Lightweight DB for login    |
-| Streamlit | Dashboard visualisasi data  |
-| Bash      | Auto-setup & script         |
+| Komponen  | Fungsi                                  |
+|-----------|-----------------------------------------|
+| Ubuntu    | Citra dasar (22.04)                     |
+| Nginx     | *Web server* & *Reverse Proxy*          |
+| PHP-FPM   | *PHP interpreter*                       |
+| SQLite3   | Basis data ringan untuk sistem login    |
+| Streamlit | Dasbor visualisasi data                 |
+| Suricata  | Sistem Deteksi Intrusi (IDS) / IPS      |
+| Certbot   | Otomatisasi sertifikat SSL/TLS          |
+| Logrotate | Manajemen rotasi log                    |
+| Bash      | Skrip *auto-setup* & *deployment*       |
 
 ---
 
@@ -30,93 +29,118 @@ Project ini adalah solusi all-in-one yang ringan dan portable untuk menyajikan:
 
 ```bash
 monitoring_app/
-├── build.sh                # Script untuk build & run container
-├── Dockerfile              # Image builder
-├── default.conf            # Nginx config
-├── entrypoint.sh           # Entrypoint untuk auto-start service
-├── html/                   # PHP files (landing, login, dashboard)
-│   ├── index.php
-│   ├── login.php
-│   ├── dashboard.php
-│   └── db/
-│       └── users.db        # SQLite DB (auto-create on first run)
-├── app/                    # Streamlit app
-│   └── dashboard.py
-````
+├── build.sh                # Skrip untuk membangun & menjalankan kontainer
+├── Dockerfile              # Definisi citra Docker
+├── .env.example            # Contoh konfigurasi variabel lingkungan
+├── .env                    # Konfigurasi variabel lingkungan (tidak di-commit)
+├── certbot/                # Direktori untuk konfigurasi Certbot & sertifikat SSL
+│   ├── conf/               # Konfigurasi Certbot
+│   └── www/                # Direktori webroot untuk tantangan Certbot
+├── db/                     # Direktori untuk basis data SQLite
+│   └── app.db
+├── docker/                 # File konfigurasi & aplikasi Docker
+│   ├── nginx/              # Konfigurasi Nginx
+│   │   └── default.conf
+│   ├── php/                # File PHP (landing, login, dasbor)
+│   │   ├── dashboard.php
+│   │   ├── index.php
+│   │   └── login.php
+│   ├── streamlit/          # Aplikasi Streamlit
+│   │   └── app.py
+│   ├── supervisor/         # Konfigurasi Supervisor
+│   │   └── supervisord.conf
+│   └── logrotate/          # Konfigurasi Logrotate
+│       └── suricata
+├── html/                   # File HTML (jika ada)
+├── init_db.py              # Skrip inisialisasi basis data
+├── LICENSE
+├── README.md
+└── suricata_logs/          # Direktori untuk log Suricata (eve.json)
+```
 
 ---
 
-## 🚀 Cara Install & Run
+## 🚀 Cara Instalasi & Menjalankan
 
-### 1. Clone atau extract folder
+### 1. Kloning Repositori
 
 ```bash
-git clone <repo>
-# atau
-unzip monitoring_app.zip && cd monitoring_app
+git clone <URL_REPOSITORI_ANDA>
+cd monitoring_app
 ```
 
-### 2. Jalankan setup
+### 2. Konfigurasi Lingkungan
+
+Buat file `.env` dari `.env.example` dan sesuaikan nilainya:
+
+```bash
+cp .env.example .env
+```
+
+Edit file `.env` dan isi variabel berikut:
+
+```ini
+DOMAIN=suricata.dhimaslanangnugroho.my.id # Ganti dengan domain Anda
+CERTBOT_EMAIL=lanangweb@gmail.com         # Ganti dengan email Anda
+ENABLE_CERTBOT=false                      # Atur 'true' untuk produksi dengan Certbot, 'false' untuk lokal/self-signed
+```
+
+**Penting:**
+- Jika `ENABLE_CERTBOT=true`, pastikan domain Anda sudah mengarah ke IP publik server dan port 80/443 terbuka di firewall Anda.
+- Jika `ENABLE_CERTBOT=false`, aplikasi akan menggunakan sertifikat *self-signed* dan Anda akan melihat peringatan keamanan di browser.
+
+### 3. Jalankan Aplikasi
+
+Berikan izin eksekusi pada skrip `build.sh` dan jalankan:
 
 ```bash
 chmod +x build.sh
 ./build.sh
 ```
 
-### 3. Akses Web App
+Skrip ini akan secara otomatis:
+- Menghentikan dan menghapus kontainer lama (jika ada).
+- Membuat sertifikat SSL (Certbot atau *self-signed*).
+- Membangun citra Docker.
+- Menjalankan kontainer dengan mode jaringan yang adaptif (`host` atau `bridge`).
+- Mengkonfigurasi Nginx dan memulai semua layanan (Nginx, PHP-FPM, Suricata, Streamlit).
 
-| Layanan      | URL                         |
-| ------------ | --------------------------- |
-| Landing Page | http\://<your-ip>/          |
-| Login Page   | http\://<your-ip>/login.php |
-| Streamlit    | http\://<your-ip>:8501      |
+### 4. Akses Aplikasi Web
+
+Setelah skrip selesai, Anda akan melihat instruksi akses di terminal. Contoh:
+
+**Akses Lokal (dengan `ENABLE_CERTBOT=false`):**
+- **Nginx/PHP**: `http://localhost:80` (akan dialihkan ke HTTPS)
+- **Dasbor Streamlit**: `https://localhost:443` (terima peringatan sertifikat *self-signed*)
+
+**Akses Produksi (dengan `ENABLE_CERTBOT=true`):**
+- **Nginx/PHP**: `http://suricata.dhimaslanangnugroho.my.id:80` (akan dialihkan ke HTTPS)
+- **Dasbor Streamlit**: `https://suricata.dhimaslanangnugroho.my.id`
 
 ---
 
-## 🔐 Default Credential (SQLite)
+## 🔐 Kredensial Default (SQLite)
 
-* **Username**: `admin`
-* **Password**: `password`
+* **Nama Pengguna**: `admin`
+* **Kata Sandi**: `password`
 
-Disimpan dalam database `html/db/users.db`. Bisa dimodifikasi manual via SQLite CLI.
+Disimpan dalam basis data `db/app.db`. Dapat dimodifikasi secara manual via SQLite CLI.
 
 ---
 
 ## 🔧 Konfigurasi Tambahan
 
-* **Nginx listen port**: 80 (public)
-* **Streamlit listen port**: 8501 (bisa di-proxy via Nginx)
-* **SQLite3**: ringan, tidak butuh daemon
-* **Log**: belum terintegrasi Suricata – dapat di-mount via volume eksternal
-
----
-
-## 📌 Catatan
-
-* Dirancang untuk low-RAM VPS (RAM 1GB cukup)
-* Semua service berjalan dalam 1 container
-* Disarankan aktifkan HTTPS dengan reverse proxy (optional)
-* Bisa dikembangkan dengan: Suricata, Grafana, Loki, dsb
+- **Rotasi Log Suricata**: File `eve.json` Suricata akan dirotasi setiap hari oleh `logrotate` untuk menghemat sumber daya dan menjaga kinerja dasbor Streamlit.
+- **Mode Jaringan Adaptif**: Skrip `build.sh` akan mencoba menggunakan `network_mode: "host"` untuk Suricata. Jika tidak didukung, ia akan secara otomatis beralih ke `network_mode: "bridge"`.
 
 ---
 
 ## 🧪 Pengembangan Selanjutnya
 
-* Integrasi Suricata log parser ke Streamlit
-* Enkripsi password (bcrypt)
-* Session token login (secure dashboard.php)
-* Integrasi monitoring menggunakan Prometheus atau Loki
-
----
-
-## 🧤 Developer Mode
-
-Untuk rebuild image manual:
-
-```bash
-docker build -t all-in-one-monitoring .
-docker run -d -p 80:80 -p 8501:8501 all-in-one-monitoring
-```
+- Integrasi aturan Suricata kustom.
+- Enkripsi kata sandi (bcrypt) untuk sistem login PHP.
+- Implementasi token sesi yang aman untuk dasbor PHP.
+- Integrasi dengan alat pemantauan lain seperti Prometheus atau Loki.
 
 ---
 
