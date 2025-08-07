@@ -14,7 +14,7 @@ RUN mkdir -p /var/www/html /var/log/supervisor /opt/app
 COPY php/ /var/www/html/
 COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 COPY streamlit/app.py /opt/app/app.py
-COPY supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 EXPOSE 80 8501 3000
 
