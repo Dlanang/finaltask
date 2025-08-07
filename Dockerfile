@@ -16,7 +16,7 @@ RUN apt-get update && apt-get install -y \
     supervisor \
     && add-apt-repository ppa:oisf/suricata-stable -y \
     && apt-get update \
-    && apt-get install -y suricata
+    && apt-get install -y suricata certbot python3-certbot-nginx certbot
 
 # Install Streamlit & Pandas untuk analisis data
 RUN pip install streamlit pandas
