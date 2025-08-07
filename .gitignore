@@ -1,14 +1,71 @@
-# Ignore environment file with secrets
+# Environments
 .env
+.env.*
+!.env.example
 
-# Ignore pem files
-*.pem
+# Dependencies
+/node_modules
+/vendor
+/bower_components
 
-# Ignore log files
+# Logs
 *.log
-
-# Ignore suricata logs
+logs/
+*.logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 suricata_logs/
 
-# Ignore database files
+# Certificates and Keys
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+certbot/
+
+# Database
 db/
+*.sqlite
+*.sqlite3
+*.sql
+*.db
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.pyc
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*~
