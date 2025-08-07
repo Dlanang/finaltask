@@ -41,11 +41,12 @@ if [ "$ENABLE_CERTBOT" = "true" ]; then
 
     sleep 5 # Give Nginx time to start
 
-    docker run --rm \
+    CERTBOT_OUTPUT=$(docker run --rm \
         -v "$(pwd)/certbot/conf:/etc/letsencrypt" \
         -v "$(pwd)/certbot/www:/var/www/certbot" \
         certbot/certbot \
-        certonly --webroot -w /var/www/certbot -d ${DOMAIN} --email ${CERTBOT_EMAIL} --rsa-key-size 4096 --agree-tos --noninteractive --force-renewal
+        certonly --webroot -w /var/www/certbot -d ${DOMAIN} --email ${CERTBOT_EMAIL} --rsa-key-size 4096 --agree-tos --noninteractive --force-renewal 2>&1)
+    echo "${CERTBOT_OUTPUT}"
 
     docker stop ${CONTAINER_NAME}_temp_nginx
     docker rm ${CONTAINER_NAME}_temp_nginx
@@ -66,7 +67,7 @@ fi
 
 # --- Step 4: Build Docker image ---
 echo "[+] Building all-in-one monitoring image..."
-docker build -t monitoring_app -f Dockerfile .
+docker build --no-cache -t monitoring_app -f Dockerfile .
 
 # --- Step 5: Run main container with network mode fallback ---
 NETWORK_MODE="host"
@@ -92,7 +93,7 @@ echo "[+] Done!"
 if [ "$NETWORK_MODE" = "host" ]; then
     if [ "$USE_HTTPS_DOMAIN" = "true" ]; then
         echo "Access Nginx/PHP at: http://${DOMAIN}:80 (will redirect to HTTPS)"
-        echo "Access Streamlit at: https://${DOMAIN}"
+        echo "Access Streamlit at: https://${DOMAIN}/streamlit/"
     else
         echo "Access Nginx/PHP at: http://${DOMAIN}:80 (will redirect to HTTPS, self-signed cert)"
         echo "Access Streamlit at: https://${DOMAIN} (accept self-signed certificate warning)"
