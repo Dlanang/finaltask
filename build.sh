@@ -36,6 +36,7 @@ if [ "$ENABLE_CERTBOT" = "true" ]; then
         --name ${CONTAINER_NAME}_temp_nginx \
         -p 80:80 \
         -v "$(pwd)/certbot/www:/var/www/certbot" \
+        -v "$(pwd)/certbot/conf/nginx_certbot_temp.conf:/etc/nginx/conf.d/default.conf" \
         nginx:latest
 
     sleep 5 # Give Nginx time to start
