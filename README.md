@@ -60,7 +60,7 @@ monitoring_app/
 
 ---
 
-## 🚀 Cara Instalasi & Menjalankan
+## 🚀 Cara Instalasi & Konfigurasi
 
 ### 1. Kloning Repositori
 
@@ -80,9 +80,9 @@ cp .env.example .env
 Edit file `.env` dan isi variabel berikut:
 
 ```ini
-DOMAIN=suricata.dhimaslanangnugroho.my.id # Ganti dengan domain Anda
-CERTBOT_EMAIL=lanangweb@gmail.com         # Ganti dengan email Anda
-ENABLE_CERTBOT=false                      # Atur 'true' untuk produksi dengan Certbot, 'false' untuk lokal/self-signed
+DOMAIN=yourdomain.com                  # Ganti dengan domain Anda
+CERTBOT_EMAIL=youremail@example.com    # Ganti dengan email Anda
+ENABLE_CERTBOT=false                   # Atur 'true' untuk produksi dengan Certbot, 'false' untuk lokal/self-signed
 ```
 
 **Penting:**
@@ -114,17 +114,17 @@ Setelah skrip selesai, Anda akan melihat instruksi akses di terminal. Contoh:
 - **Dasbor Streamlit**: `https://localhost:443` (terima peringatan sertifikat *self-signed*)
 
 **Akses Produksi (dengan `ENABLE_CERTBOT=true`):**
-- **Nginx/PHP**: `http://suricata.dhimaslanangnugroho.my.id:80` (akan dialihkan ke HTTPS)
-- **Dasbor Streamlit**: `https://suricata.dhimaslanangnugroho.my.id`
+- **Nginx/PHP**: `http://yourdomain.com:80` (akan dialihkan ke HTTPS)
+- **Dasbor Streamlit**: `https://yourdomain.com`
 
 ---
 
 ## 🔐 Kredensial Default (SQLite)
 
 * **Nama Pengguna**: `admin`
-* **Kata Sandi**: `password`
+* **Kata Sandi**: `admin`
 
-Disimpan dalam basis data `db/app.db`. Dapat dimodifikasi secara manual via SQLite CLI.
+Kredensial disimpan dalam basis data `db/app.db`. Skrip `init_db.py` akan membuat pengguna ini saat pertama kali dijalankan.
 
 ---
 
@@ -147,5 +147,3 @@ Disimpan dalam basis data `db/app.db`. Dapat dimodifikasi secara manual via SQLi
 ## 🪪 Lisensi
 
 MIT License © 2025
-
-```

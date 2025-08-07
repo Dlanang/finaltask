@@ -1,2 +1,14 @@
 # Ignore environment file with secrets
 .env
+
+# Ignore pem files
+*.pem
+
+# Ignore log files
+*.log
+
+# Ignore suricata logs
+suricata_logs/
+
+# Ignore database files
+db/
