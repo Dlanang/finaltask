@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: ./docker
+    container_name: monitoring_allinone
+    volumes:
+      - ./docker/php:/var/www/html
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - ./docker/streamlit:/opt/app
+      - ./db:/db
+    ports:
+      - "80:80"
+      - "8501:8501"
+    privileged: true
