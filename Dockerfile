@@ -1,32 +1,40 @@
-
+# Base image
 FROM ubuntu:22.04
 
+# Hindari prompt interaktif saat instalasi
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt update && apt install -y \
-    nginx php php-fpm php-sqlite3 sqlite3 python3-pip python3-venv supervisor
+# Install dependensi dasar, Nginx, PHP, Python, Supervisor, dan Suricata
+RUN apt-get update && apt-get install -y \
+    software-properties-common \
+    nginx \
+    php-fpm \
+    php-sqlite3 \
+    sqlite3 \
+    python3-pip \
+    python3-venv \
+    supervisor \
+    && add-apt-repository ppa:oisf/suricata-stable -y \
+    && apt-get update \
+    && apt-get install -y suricata
 
-# Install streamlit
-RUN pip install streamlit
+# Install Streamlit & Pandas untuk analisis data
+RUN pip install streamlit pandas
 
-# Create user for streamlit
-RUN useradd -m streamuser
+# Buat direktori log untuk Suricata
+RUN mkdir -p /var/log/suricata
 
-# Setup directories
-COPY html/ /var/www/html/
-COPY php/ /var/www/html/
-COPY db/ /var/www/db/
-COPY streamlit/ /home/streamuser/app/
+# Salin file aplikasi dan konfigurasi
+COPY docker/php/ /var/www/html/
+COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf
+COPY docker/streamlit/ /opt/app/
+COPY docker/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-# Supervisor config
-COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+# Atur kepemilikan file
+RUN chown -R www-data:www-data /var/www/html
 
-# Nginx config
-COPY nginx/default.conf /etc/nginx/sites-enabled/default
-
-# Permissions
-RUN chown -R www-data:www-data /var/www/html /var/www/db
-
+# Expose port (meskipun network_mode: host, ini untuk dokumentasi)
 EXPOSE 80 8501
 
-CMD ["/usr/bin/supervisord"]
+# Jalankan Supervisor untuk mengelola semua proses
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
