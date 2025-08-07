@@ -1,0 +1,12 @@
+/var/log/suricata/eve.json {
+    daily
+    missingok
+    rotate 7
+    compress
+    delaycompress
+    notifempty
+    create 0640 suricata suricata
+    postrotate
+        /usr/bin/killall -HUP suricata
+    endscript
+}

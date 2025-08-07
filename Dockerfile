@@ -14,9 +14,11 @@ RUN apt-get update && apt-get install -y \
     python3-pip \
     python3-venv \
     supervisor \
+    logrotate \
+    cron \
     && add-apt-repository ppa:oisf/suricata-stable -y \
     && apt-get update \
-    && apt-get install -y suricata certbot python3-certbot-nginx certbot
+    && apt-get install -y suricata certbot python3-certbot-nginx
 
 # Install Streamlit & Pandas untuk analisis data
 RUN pip install streamlit pandas
@@ -29,9 +31,13 @@ COPY docker/php/ /var/www/html/
 COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf
 COPY docker/streamlit/ /opt/app/
 COPY docker/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY docker/logrotate/suricata /etc/logrotate.d/suricata
 
 # Atur kepemilikan file
 RUN chown -R www-data:www-data /var/www/html
+
+# Tambahkan cron job untuk logrotate
+RUN echo "0 0 * * * /usr/sbin/logrotate /etc/logrotate.conf" >> /etc/crontab
 
 # Expose port (meskipun network_mode: host, ini untuk dokumentasi)
 EXPOSE 80 8501
