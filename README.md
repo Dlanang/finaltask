@@ -146,24 +146,25 @@ Skrip `build.sh` sekarang akan secara otomatis membuat dua file di direktori pro
     *   `outputs` -> `eve-log` diaktifkan (`enabled: yes`) dan mengarah ke `eve.json`.
     *   `pcap` -> `interface` diatur ke antarmuka jaringan *host* Anda (misalnya, `eth0`, `enp0s3`, `wlan0`).
 
-5.  **Siapkan dan Jalankan Layanan Suricata (Menggunakan File yang Dihasilkan `build.sh`):**
-    Setelah Anda menjalankan `./build.sh`, dua file akan dibuat di direktori proyek Anda:
-    *   `start_suricata.sh`: Skrip pembantu untuk memulai Suricata dengan deteksi antarmuka otomatis.
-    *   `suricata.service`: Berkas unit systemd untuk mengelola Suricata.
+5.  **Otomatisasi Penyiapan Suricata di Host (Disarankan):**
+    Skrip `build.sh` sekarang akan secara otomatis membuat skrip `setup_suricata_host.sh` di direktori proyek Anda. Skrip ini akan mengotomatiskan langkah-langkah penyalinan file, pengaturan izin, dan konfigurasi systemd untuk Suricata.
 
-    Jalankan perintah berikut di terminal *host* Anda:
+    Setelah menjalankan `./build.sh`, jalankan perintah berikut di terminal *host* Anda:
     ```bash
-    sudo cp $(pwd)/start_suricata.sh /usr/local/bin/
-    sudo chmod +x /usr/local/bin/start_suricata.sh
-    sudo cp $(pwd)/suricata.service /etc/systemd/system/
-    sudo systemctl daemon-reload
-    sudo systemctl enable suricata
-    sudo systemctl start suricata
-    sudo systemctl status suricata
+    sudo ./setup_suricata_host.sh
     ```
+    Skrip ini akan menyalin `start_suricata.sh` dan `suricata.service` ke lokasi yang benar, memuat ulang systemd, mengaktifkan, dan memulai layanan Suricata.
 
-6.  **Verifikasi Log:**
-    Pastikan `eve.json` sedang dibuat di direktori log yang benar (yaitu, `/home/whoami/Downloads/monitoring_app/suricata_logs`) dan berisi data. Anda bisa melihat isinya dengan `cat /home/whoami/Downloads/monitoring_app/suricata_logs/eve.json`.
+6.  **Verifikasi Suricata dan Log:**
+    Setelah menjalankan skrip otomatisasi, pastikan Suricata berjalan dengan baik dan menghasilkan log `eve.json` yang valid di direktori `/home/whoami/Downloads/monitoring_app/suricata_logs/`. Anda dapat memeriksa status Suricata dengan:
+    ```bash
+    systemctl status suricata
+    ```
+    Dan melihat isi `eve.json` dengan:
+    ```bash
+    cat /home/whoami/Downloads/monitoring_app/suricata_logs/eve.json
+    ```
+    Pastikan file ini berisi data JSON yang terus bertambah.
 
 ---
 
