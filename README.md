@@ -1,11 +1,6 @@
-# 📦 All-in-One Monitoring App (Nginx + PHP + SQLite + Streamlit + Suricata)
+# 📦 Monitoring App (Nginx + Streamlit)
 
-Proyek ini adalah solusi *all-in-one* yang ringan dan portabel untuk menyajikan:
-
-- ✅ Landing page & sistem login berbasis PHP + SQLite
-- ✅ Dasbor Streamlit untuk visualisasi pemantauan jaringan *real-time* (didukung oleh Suricata)
-- ✅ Disajikan melalui satu kontainer Docker
-- ✅ Dukungan HTTPS dengan sertifikat *self-signed* (lokal) atau Let's Encrypt (produksi)
+Proyek ini adalah solusi ringan dan portabel untuk menyajikan dasbor pemantauan jaringan *real-time* yang didukung oleh Suricata, disajikan melalui satu kontainer Docker.
 
 ---
 
@@ -15,13 +10,11 @@ Proyek ini adalah solusi *all-in-one* yang ringan dan portabel untuk menyajikan:
 |-----------|-----------------------------------------|
 | Ubuntu    | Citra dasar (22.04)                     |
 | Nginx     | *Web server* & *Reverse Proxy*          |
-| PHP-FPM   | *PHP interpreter*                       |
-| SQLite3   | Basis data ringan untuk sistem login    |
+| Python    | Bahasa pemrograman utama                |
 | Streamlit | Dasbor visualisasi data                 |
-| Suricata  | Sistem Deteksi Intrusi (IDS) / IPS      |
+| SQLite3   | Basis data ringan (untuk konfigurasi internal) |
 | Certbot   | Otomatisasi sertifikat SSL/TLS          |
-| Logrotate | Manajemen rotasi log                    |
-| Bash      | Skrip *auto-setup* & *deployment*       |
+| Supervisor| Manajemen proses dalam kontainer        |
 
 ---
 
@@ -30,32 +23,26 @@ Proyek ini adalah solusi *all-in-one* yang ringan dan portabel untuk menyajikan:
 ```bash
 monitoring_app/
 ├── build.sh                # Skrip untuk membangun & menjalankan kontainer
+├── docker-compose.yaml     # Definisi layanan Docker Compose
 ├── Dockerfile              # Definisi citra Docker
 ├── .env.example            # Contoh konfigurasi variabel lingkungan
 ├── .env                    # Konfigurasi variabel lingkungan (tidak di-commit)
 ├── certbot/                # Direktori untuk konfigurasi Certbot & sertifikat SSL
 │   ├── conf/               # Konfigurasi Certbot
 │   └── www/                # Direktori webroot untuk tantangan Certbot
-├── db/                     # Direktori untuk basis data SQLite
+├── db/                     # Direktori untuk basis data SQLite (digunakan oleh Streamlit)
 │   └── app.db
 ├── docker/                 # File konfigurasi & aplikasi Docker
 │   ├── nginx/              # Konfigurasi Nginx
 │   │   └── default.conf
-│   ├── php/                # File PHP (landing, login, dasbor)
-│   │   ├── dashboard.php
-│   │   ├── index.php
-│   │   └── login.php
 │   ├── streamlit/          # Aplikasi Streamlit
 │   │   └── app.py
-│   ├── supervisor/         # Konfigurasi Supervisor
-│   │   └── supervisord.conf
-│   └── logrotate/          # Konfigurasi Logrotate
-│       └── suricata
-├── html/                   # File HTML (jika ada)
-├── init_db.py              # Skrip inisialisasi basis data
+│   └── supervisor/         # Konfigurasi Supervisor
+│       └── supervisord.conf
+├── init_db.py              # Skrip inisialisasi basis data (untuk Streamlit)
 ├── LICENSE
 ├── README.md
-└── suricata_logs/          # Direktori untuk log Suricata (eve.json)
+└── suricata_logs/          # Direktori untuk log Suricata (eve.json) dari host
 ```
 
 ---
@@ -89,7 +76,7 @@ ENABLE_CERTBOT=false                   # Atur 'true' untuk produksi dengan Certb
 - Jika `ENABLE_CERTBOT=true`, pastikan domain Anda sudah mengarah ke IP publik server dan port 80/443 terbuka di firewall Anda.
 - Jika `ENABLE_CERTBOT=false`, aplikasi akan menggunakan sertifikat *self-signed* dan Anda akan melihat peringatan keamanan di browser.
 
-### 3. Jalankan Aplikasi
+### 3. Jalankan Aplikasi Docker dengan Docker Compose
 
 Berikan izin eksekusi pada skrip `build.sh` dan jalankan:
 
@@ -99,48 +86,78 @@ chmod +x build.sh
 ```
 
 Skrip ini akan secara otomatis:
-- Menghentikan dan menghapus kontainer lama (jika ada).
+- Menghentikan dan menghapus layanan Docker Compose lama (jika ada).
 - Membuat sertifikat SSL (Certbot atau *self-signed*).
-- Membangun citra Docker.
-- Menjalankan kontainer dengan mode jaringan yang adaptif (`host` atau `bridge`).
-- Mengkonfigurasi Nginx dan memulai semua layanan (Nginx, PHP-FPM, Suricata, Streamlit).
+- Membangun citra Docker untuk layanan `app`.
+- Menjalankan layanan `app` menggunakan Docker Compose dengan port yang dipetakan.
+
+**Penting:** Pastikan Suricata sudah berjalan di *host system* Anda dan menghasilkan `eve.json` di direktori yang benar (`suricata_logs/`) agar dasbor Streamlit dapat menampilkan data.
 
 ### 4. Akses Aplikasi Web
 
-Setelah skrip selesai, Anda akan melihat instruksi akses di terminal. Contoh:
+Setelah skrip `build.sh` selesai, aplikasi akan berjalan dan dapat diakses melalui *browser* Anda.
 
-**Akses Lokal (dengan `ENABLE_CERTBOT=false`):**
-- **Nginx/PHP**: `http://localhost:80` (akan dialihkan ke HTTPS)
-- **Dasbor Streamlit**: `https://localhost:443` (terima peringatan sertifikat *self-signed*)
+**Akses Lokal (dengan `ENABLE_CERTBOT=false` di `.env`):**
+- **Dasbor Streamlit**: Akses `https://localhost` atau `https://127.0.0.1`. Anda mungkin perlu menerima peringatan sertifikat *self-signed* di *browser* Anda.
 
-**Akses Produksi (dengan `ENABLE_CERTBOT=true`):**
-- **Nginx/PHP**: `http://yourdomain.com:80` (akan dialihkan ke HTTPS)
-- **Dasbor Streamlit**: `https://yourdomain.com`
+**Akses Produksi/Server (dengan `ENABLE_CERTBOT=true` di `.env`):**
+- **Dasbor Streamlit**: Akses `https://yourdomain.com` (ganti `yourdomain.com` dengan `DOMAIN` yang Anda atur di `.env`).
+
+**Catatan tentang Akses Streamlit:**
+Aplikasi ini dirancang untuk langsung menyajikan dasbor Streamlit sebagai halaman utama. Tidak ada halaman *login* atau halaman arahan terpisah sebelum dasbor. Ini berarti ketika Anda mengakses domain atau `localhost`, Anda akan langsung melihat dasbor pemantauan jaringan.
 
 ---
 
-## 🔐 Kredensial Default (SQLite)
+## ⚙️ Konfigurasi Suricata (Host System)
 
-* **Nama Pengguna**: `admin`
-* **Kata Sandi**: `admin`
+**Penting:** Suricata harus diinstal dan dikonfigurasi secara terpisah di *host system* Anda. Aplikasi Docker ini akan membaca log `eve.json` yang dihasilkan oleh Suricata di host Anda melalui *volume mounting*.
 
-Kredensial disimpan dalam basis data `db/app.db`. Skrip `init_db.py` akan membuat pengguna ini saat pertama kali dijalankan.
+### 1. Instal Suricata & Suricata-Update
+
+```bash
+sudo add-apt-repository ppa:oisf/suricata-stable
+sudo apt-get update
+sudo apt-get install suricata suricata-update
+```
+
+### 2. Konfigurasi Sumber Aturan (Rules)
+
+```bash
+sudo suricata-update add-source et/open
+sudo suricata-update add-source oisf/trafficid
+```
+
+### 3. Perbarui Aturan
+
+```bash
+sudo suricata-update
+```
+
+### 4. Konfigurasi `suricata.yaml` (Host System)
+
+Edit file `/etc/suricata/suricata.yaml` di host Anda. Pastikan:
+- `HOME_NET` dan `EXTERNAL_NET` dikonfigurasi dengan benar sesuai jaringan Anda.
+- `default-log-dir` mengarah ke direktori yang akan di-*mount* ke kontainer Docker (misalnya, `/home/whoami/Downloads/monitoring_app/suricata_logs`).
+- `outputs` -> `eve-log` diaktifkan (`enabled: yes`) dan mengarah ke `eve.json`.
+- `pcap` -> `interface` diatur ke antarmuka jaringan *host* Anda (misalnya, `eth0`, `enp0s3`, `wlan0`).
+
+### 5. Jalankan Suricata
+
+```bash
+sudo systemctl enable suricata
+sudo systemctl start suricata
+sudo systemctl status suricata
+```
+
+### 6. Verifikasi Log
+
+Pastikan `eve.json` sedang dibuat di direktori log yang benar (misalnya, `/home/whoami/Downloads/monitoring_app/suricata_logs`).
 
 ---
 
 ## 🔧 Konfigurasi Tambahan
 
-- **Rotasi Log Suricata**: File `eve.json` Suricata akan dirotasi setiap hari oleh `logrotate` untuk menghemat sumber daya dan menjaga kinerja dasbor Streamlit.
-- **Mode Jaringan Adaptif**: Skrip `build.sh` akan mencoba menggunakan `network_mode: "host"` untuk Suricata. Jika tidak didukung, ia akan secara otomatis beralih ke `network_mode: "bridge"`.
-
----
-
-## 🧪 Pengembangan Selanjutnya
-
-- Integrasi aturan Suricata kustom.
-- Enkripsi kata sandi (bcrypt) untuk sistem login PHP.
-- Implementasi token sesi yang aman untuk dasbor PHP.
-- Integrasi dengan alat pemantauan lain seperti Prometheus atau Loki.
+- **Rotasi Log Suricata**: Pastikan Anda mengkonfigurasi rotasi log untuk `eve.json` di *host system* Anda (misalnya, menggunakan `logrotate`) untuk menghemat sumber daya dan menjaga kinerja dasbor Streamlit.
 
 ---
 
