@@ -112,46 +112,58 @@ Aplikasi ini dirancang untuk langsung menyajikan dasbor Streamlit sebagai halama
 
 **Penting:** Suricata harus diinstal dan dikonfigurasi secara terpisah di *host system* Anda. Aplikasi Docker ini akan membaca log `eve.json` yang dihasilkan oleh Suricata di host Anda melalui *volume mounting*.
 
-### 1. Instal Suricata & Suricata-Update
+Skrip `build.sh` sekarang akan secara otomatis membuat dua file di direktori proyek Anda (`start_suricata.sh` dan `suricata.service`) yang akan membantu Anda menyiapkan Suricata di *host system* Anda.
 
-```bash
-sudo add-apt-repository ppa:oisf/suricata-stable
-sudo apt-get update
-sudo apt-get install suricata suricata-update
-```
+### Langkah-langkah Manual di Host System Anda:
 
-### 2. Konfigurasi Sumber Aturan (Rules)
+1.  **Instal Suricata:**
+    *   **Untuk Ubuntu/Debian:**
+        ```bash
+        sudo add-apt-repository ppa:oisf/suricata-stable
+        sudo apt-get update
+        sudo apt-get install suricata suricata-update
+        ```
+    *   **Untuk Arch Linux:**
+        ```bash
+        sudo pacman -S suricata
+        ```
 
-```bash
-sudo suricata-update add-source et/open
-sudo suricata-update add-source oisf/trafficid
-```
+2.  **Konfigurasi Sumber Aturan (Rules):**
+    ```bash
+    sudo suricata-update add-source et/open
+    sudo suricata-update add-source oisf/trafficid
+    ```
 
-### 3. Perbarui Aturan
+3.  **Perbarui Aturan:**
+    ```bash
+    sudo suricata-update
+    ```
 
-```bash
-sudo suricata-update
-```
+4.  **Konfigurasi `suricata.yaml` (Host System):**
+    Edit file `/etc/suricata/suricata.yaml` di host Anda. Pastikan:
+    *   `HOME_NET` dan `EXTERNAL_NET` dikonfigurasi dengan benar sesuai jaringan Anda.
+    *   `default-log-dir` mengarah ke direktori yang akan di-*mount* ke kontainer Docker (yaitu, `/home/whoami/Downloads/monitoring_app/suricata_logs`).
+    *   `outputs` -> `eve-log` diaktifkan (`enabled: yes`) dan mengarah ke `eve.json`.
+    *   `pcap` -> `interface` diatur ke antarmuka jaringan *host* Anda (misalnya, `eth0`, `enp0s3`, `wlan0`).
 
-### 4. Konfigurasi `suricata.yaml` (Host System)
+5.  **Siapkan dan Jalankan Layanan Suricata (Menggunakan File yang Dihasilkan `build.sh`):**
+    Setelah Anda menjalankan `./build.sh`, dua file akan dibuat di direktori proyek Anda:
+    *   `start_suricata.sh`: Skrip pembantu untuk memulai Suricata dengan deteksi antarmuka otomatis.
+    *   `suricata.service`: Berkas unit systemd untuk mengelola Suricata.
 
-Edit file `/etc/suricata/suricata.yaml` di host Anda. Pastikan:
-- `HOME_NET` dan `EXTERNAL_NET` dikonfigurasi dengan benar sesuai jaringan Anda.
-- `default-log-dir` mengarah ke direktori yang akan di-*mount* ke kontainer Docker (misalnya, `/home/whoami/Downloads/monitoring_app/suricata_logs`).
-- `outputs` -> `eve-log` diaktifkan (`enabled: yes`) dan mengarah ke `eve.json`.
-- `pcap` -> `interface` diatur ke antarmuka jaringan *host* Anda (misalnya, `eth0`, `enp0s3`, `wlan0`).
+    Jalankan perintah berikut di terminal *host* Anda:
+    ```bash
+    sudo cp $(pwd)/start_suricata.sh /usr/local/bin/
+    sudo chmod +x /usr/local/bin/start_suricata.sh
+    sudo cp $(pwd)/suricata.service /etc/systemd/system/
+    sudo systemctl daemon-reload
+    sudo systemctl enable suricata
+    sudo systemctl start suricata
+    sudo systemctl status suricata
+    ```
 
-### 5. Jalankan Suricata
-
-```bash
-sudo systemctl enable suricata
-sudo systemctl start suricata
-sudo systemctl status suricata
-```
-
-### 6. Verifikasi Log
-
-Pastikan `eve.json` sedang dibuat di direktori log yang benar (misalnya, `/home/whoami/Downloads/monitoring_app/suricata_logs`).
+6.  **Verifikasi Log:**
+    Pastikan `eve.json` sedang dibuat di direktori log yang benar (yaitu, `/home/whoami/Downloads/monitoring_app/suricata_logs`) dan berisi data. Anda bisa melihat isinya dengan `cat /home/whoami/Downloads/monitoring_app/suricata_logs/eve.json`.
 
 ---
 
