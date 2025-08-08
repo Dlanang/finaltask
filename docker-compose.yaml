@@ -13,6 +13,7 @@ services:
       - ./docker/streamlit:/opt/app
       - ./db:/db
       - ./suricata_logs:/var/log/suricata
+      - ./certbot/conf:/etc/letsencrypt
     privileged: true
     stdin_open: true
     tty: true
