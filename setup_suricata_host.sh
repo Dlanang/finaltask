@@ -3,12 +3,6 @@
 # This script automates the setup of Suricata on the host system.
 # It should be run with sudo privileges.
 
-# Ensure the script is run with sudo
-if [ "$EUID" -ne 0 ]; then
-    echo "Please run this script with sudo: sudo ./setup_suricata_host.sh"
-    exit 1
-fi
-
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 echo "[+] Starting Suricata host setup automation..."
