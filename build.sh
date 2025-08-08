@@ -63,15 +63,66 @@ else
     USE_HTTPS_DOMAIN=false
 fi
 
-# --- Step 4: Build Docker Compose services ---
+# --- Step 4: Prepare Suricata Host System Setup Scripts ---
+echo "[+] Preparing Suricata host system setup scripts..."
+
+# Create start_suricata.sh
+cat << EOF > start_suricata.sh
+#!/bin/bash
+
+# Detect the primary network interface
+INTERFACE=$(ip route get 1.1.1.1 | awk '{print $5}' | head -n 1)
+
+if [ -z "$INTERFACE" ]; then
+    echo "Error: Could not detect network interface. Please specify it manually." >&2
+    exit 1
+fi
+
+echo "Detected network interface: $INTERFACE"
+
+exec /usr/bin/suricata -c /etc/suricata/suricata.yaml -i "$INTERFACE" --user suricata --group suricata --pidfile /run/suricata.pid
+EOF
+chmod +x start_suricata.sh
+
+# Create suricata.service
+cat << EOF > suricata.service
+[Unit]
+Description=Suricata Intrusion Detection System
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/start_suricata.sh
+ExecReload=/bin/kill -HUP $MAINPID
+PIDFile=/run/suricata.pid
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+echo "[!] IMPORTANT: Manual steps required for Suricata setup on your host system:"
+echo "1. Copy and make executable the Suricata start script:"
+echo "   sudo cp $(pwd)/start_suricata.sh /usr/local/bin/"
+echo "   sudo chmod +x /usr/local/bin/start_suricata.sh"
+echo "2. Copy the Suricata systemd service file:"
+echo "   sudo cp $(pwd)/suricata.service /etc/systemd/system/"
+echo "3. Reload systemd, enable, and start Suricata:"
+echo "   sudo systemctl daemon-reload"
+echo "   sudo systemctl enable suricata"
+echo "   sudo systemctl start suricata"
+echo "   sudo systemctl status suricata"
+echo "Please perform these steps on your host machine to ensure Suricata is running and generating logs."
+
+# --- Step 5: Build Docker Compose services ---
 echo "[+] Building Docker Compose services..."
 docker-compose build
 
-# --- Step 5: Run Docker Compose services ---
+# --- Step 6: Run Docker Compose services ---
 echo "[+] Starting Docker Compose services..."
 docker-compose up -d
 
-# --- Step 6: Final access instructions ---
+# --- Step 7: Final access instructions ---
 echo "[+] Done!"
 if [ "$USE_HTTPS_DOMAIN" = "true" ]; then
     echo "Access Streamlit at: https://${DOMAIN}"
