@@ -27,9 +27,6 @@ RUN mkdir -p /var/log/suricata
 COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf
 COPY docker/streamlit/ /opt/app/
 COPY docker/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-COPY init_db.py /usr/local/bin/init_db.py
-RUN python3 /usr/local/bin/init_db.py
-
 # Tambahkan cron job untuk logrotate
 RUN echo "0 0 * * * /usr/sbin/logrotate /etc/logrotate.conf" >> /etc/crontab
 
