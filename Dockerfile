@@ -27,7 +27,6 @@ RUN mkdir -p /var/log/suricata
 COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf
 COPY docker/streamlit/ /opt/app/
 COPY docker/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-COPY docker/logrotate/suricata /etc/logrotate.d/suricata
 COPY init_db.py /usr/local/bin/init_db.py
 RUN python3 /usr/local/bin/init_db.py
 
