@@ -14,9 +14,8 @@ RUN apt-get update && apt-get install -y \
     supervisor \
     logrotate \
     cron \
-    && add-apt-repository ppa:oisf/suricata-stable -y \
     && apt-get update \
-    && apt-get install -y suricata certbot python3-certbot-nginx
+    && apt-get install -y certbot python3-certbot-nginx
 
 # Install Streamlit & Pandas untuk analisis data
 RUN pip install streamlit pandas bcrypt
@@ -29,7 +28,6 @@ COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf
 COPY docker/streamlit/ /opt/app/
 COPY docker/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY docker/logrotate/suricata /etc/logrotate.d/suricata
-COPY docker/suricata/rules/suricata.rules /var/lib/suricata/rules/suricata.rules
 COPY init_db.py /usr/local/bin/init_db.py
 RUN python3 /usr/local/bin/init_db.py
 
