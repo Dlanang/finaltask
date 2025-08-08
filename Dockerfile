@@ -8,8 +8,6 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
     software-properties-common \
     nginx \
-    php-fpm \
-    php-sqlite3 \
     sqlite3 \
     python3-pip \
     python3-venv \
@@ -21,20 +19,18 @@ RUN apt-get update && apt-get install -y \
     && apt-get install -y suricata certbot python3-certbot-nginx
 
 # Install Streamlit & Pandas untuk analisis data
-RUN pip install streamlit pandas
+RUN pip install streamlit pandas bcrypt
 
 # Buat direktori log untuk Suricata
 RUN mkdir -p /var/log/suricata
 
 # Salin file aplikasi dan konfigurasi
-COPY docker/php/ /var/www/html/
 COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf
 COPY docker/streamlit/ /opt/app/
 COPY docker/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY docker/logrotate/suricata /etc/logrotate.d/suricata
-
-# Atur kepemilikan file
-RUN chown -R www-data:www-data /var/www/html
+COPY init_db.py /usr/local/bin/init_db.py
+RUN python3 /usr/local/bin/init_db.py
 
 # Tambahkan cron job untuk logrotate
 RUN echo "0 0 * * * /usr/sbin/logrotate /etc/logrotate.conf" >> /etc/crontab
