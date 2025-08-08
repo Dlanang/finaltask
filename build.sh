@@ -101,18 +101,52 @@ Restart=on-failure
 WantedBy=multi-user.target
 EOF
 
-echo "[!] IMPORTANT: Manual steps required for Suricata setup on your host system:"
-echo "1. Copy and make executable the Suricata start script:"
-echo "   sudo cp $(pwd)/start_suricata.sh /usr/local/bin/"
-echo "   sudo chmod +x /usr/local/bin/start_suricata.sh"
-echo "2. Copy the Suricata systemd service file:"
-echo "   sudo cp $(pwd)/suricata.service /etc/systemd/system/"
-echo "3. Reload systemd, enable, and start Suricata:"
-echo "   sudo systemctl daemon-reload"
-echo "   sudo systemctl enable suricata"
-echo "   sudo systemctl start suricata"
-echo "   sudo systemctl status suricata"
-echo "Please perform these steps on your host machine to ensure Suricata is running and generating logs."
+# Create setup_suricata_host.sh
+cat << EOF > setup_suricata_host.sh
+#!/bin/bash
+
+# This script automates the setup of Suricata on the host system.
+# It should be run with sudo privileges.
+
+# Ensure the script is run with sudo
+if [ "$EUID" -ne 0 ]; then
+    echo "Please run this script with sudo: sudo ./setup_suricata_host.sh"
+    exit 1
+fi
+
+PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+echo "[+] Starting Suricata host setup automation..."
+
+# 1. Copy and make executable the Suricata start script
+echo "[+] Copying start_suricata.sh to /usr/local/bin/"
+cp "$PROJECT_DIR/start_suricata.sh" /usr/local/bin/
+chmod +x /usr/local/bin/start_suricata.sh
+
+# 2. Copy the Suricata systemd service file
+echo "[+] Copying suricata.service to /etc/systemd/system/"
+cp "$PROJECT_DIR/suricata.service" /etc/systemd/system/
+
+# 3. Reload systemd, enable, and start Suricata
+echo "[+] Reloading systemd daemon..."
+systemctl daemon-reload
+
+echo "[+] Enabling Suricata service..."
+systemctl enable suricata
+
+echo "[+] Starting Suricata service..."
+systemctl start suricata
+
+echo "[+] Checking Suricata service status..."
+systemctl status suricata
+
+echo "[+] Suricata host setup automation complete. Please verify the status above."
+EOF
+chmod +x setup_suricata_host.sh
+
+echo "[!] IMPORTANT: To complete Suricata setup on your host system, please run the following command:"
+echo "   sudo ./setup_suricata_host.sh"
+echo "After running the above, ensure Suricata is running and generating logs in 'suricata_logs/'"
 
 # --- Step 5: Build Docker Compose services ---
 echo "[+] Building Docker Compose services..."
