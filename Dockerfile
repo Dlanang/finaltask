@@ -4,8 +4,8 @@ FROM ubuntu:22.04
 # Hindari prompt interaktif saat instalasi
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install dependensi dasar, Nginx, PHP, Python, Supervisor, dan Suricata
-RUN apt-get update && apt-get install -y \
+# Install dependensi dasar, Nginx, Python, Supervisor, dan Certbot
+RUN apt-get update && apt-get install -y --no-install-recommends \
     software-properties-common \
     nginx \
     sqlite3 \
@@ -14,8 +14,8 @@ RUN apt-get update && apt-get install -y \
     supervisor \
     logrotate \
     cron \
-    && apt-get update \
-    && apt-get install -y certbot python3-certbot-nginx
+    certbot \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install Streamlit & Pandas untuk analisis data
 RUN pip install streamlit pandas bcrypt
